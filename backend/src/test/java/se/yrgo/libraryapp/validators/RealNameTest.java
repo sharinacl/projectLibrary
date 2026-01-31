@@ -46,5 +46,4 @@ class RealNameTest {
         assertThat(RealName.validate(null)).isFalse();
     }
 
-
 }

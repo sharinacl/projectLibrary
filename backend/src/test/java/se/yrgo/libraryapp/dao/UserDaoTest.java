@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import se.yrgo.libraryapp.entities.*;
-
+import java.util.Optional;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -52,4 +52,38 @@ public class UserDaoTest {
         UserDao userDao = new UserDao(ds);
         assertThat(userDao.getLoginInfo(username)).isEmpty();
     }
+
+    @Test
+    void getExistingUser() throws SQLException {
+        final String userId = "1";
+        final UserId id = UserId.of(userId);
+        final String username = "testuser";
+        final String realname = "Bosse";
+
+        when(ds.getConnection()).thenReturn(conn);
+        when(conn.createStatement()).thenReturn(stmt);
+        when(stmt.executeQuery(anyString())).thenReturn(rs);
+        when(rs.next()).thenReturn(true, false);
+
+        when(rs.getString("user")).thenReturn(username);
+        when(rs.getString("realname")).thenReturn(realname);
+
+        UserDao userDao = new UserDao(ds);
+        assertThat(userDao.get(userId)).isEqualTo(Optional.of(new User(id, username, realname)));
+    }
+
+    @Test
+    void getNonExistingUser() throws SQLException {
+        final String userId = "999";
+
+        when(ds.getConnection()).thenReturn(conn);
+        when(conn.createStatement()).thenReturn(stmt);
+        when(stmt.executeQuery(anyString())).thenReturn(rs);
+        when(rs.next()).thenReturn(false);
+
+        UserDao userDao = new UserDao(ds);
+        assertThat(userDao.get(userId)).isEmpty();
+    }
+
+
 }
