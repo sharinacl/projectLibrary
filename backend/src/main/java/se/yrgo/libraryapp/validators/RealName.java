@@ -20,11 +20,18 @@ public final class RealName {
     private static final Set<String> invalidWords = new HashSet<>();
 
     static {
-        try (InputStream is = RealName.class.getClassLoader().getResourceAsStream("bad_words.txt");
-                BufferedReader reader =
-                        new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            while (reader.readLine() != null) {
-                invalidWords.addAll(reader.lines().collect(Collectors.toSet()));
+        try (InputStream is = RealName.class.getClassLoader().getResourceAsStream("bad_words.txt")) {
+            if (is == null) {
+                logger.error("bad_words.txt not found on classpath");
+            } else {
+                try (BufferedReader reader =
+                             new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                    invalidWords.addAll(reader.lines()
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .map(String::toLowerCase)
+                            .collect(Collectors.toSet()));
+                }
             }
         } catch (IOException ex) {
             logger.error("Unable to initialize list of bad words", ex);
@@ -41,13 +48,26 @@ public final class RealName {
      * 
      */
     public static boolean validate(String name) {
-        String cleanName = Utils.cleanAndUnLeet(name);
-        String[] words = cleanName.split("\\W+");
-        for (int i = 1; i < words.length; i++) {
-            if (invalidWords.contains(words[i])) {
+        if (name == null) {
+            return false;
+        }
+        if (name.trim().isEmpty()) {
+            return false;
+        }
+
+        final String cleanName = Utils.cleanAndUnLeet(name).toLowerCase();
+
+        final String[] words = cleanName.split("\\W+");
+
+        for (String w : words) {
+            if (w.isEmpty()) {
+                continue;
+            }
+            if (invalidWords.contains(w)) {
                 return false;
             }
         }
         return true;
     }
+
 }

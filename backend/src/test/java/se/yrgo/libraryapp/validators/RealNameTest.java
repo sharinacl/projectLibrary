@@ -5,7 +5,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 class RealNameTest {
     @ParameterizedTest
@@ -43,9 +42,9 @@ class RealNameTest {
     }
 
     @Test
-    void nullThrowsNullPointerException() {
-        assertThatThrownBy(() -> RealName.validate(null))
-                .isInstanceOf(NullPointerException.class);
+    void nullIsRejected() {
+        assertThat(RealName.validate(null)).isFalse();
     }
+
 
 }
