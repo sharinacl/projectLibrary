@@ -20,61 +20,66 @@ import se.yrgo.libraryapp.entities.Role;
 
 /**
  * This is a Jooby application, an alternative to Spring, kind of.
- * 
+ * <p>
  * Don't be afraid to read more about how Jooby works at https://jooby.io/
- * 
+ *
  */
 public class App extends Jooby {
-  public App() {
-    install(new GracefulShutdown());
-    install(new GuiceModule()); // dependency injection
-    install(new HikariModule()); // database connections
-    install(new FlywayModule()); // schema migration
-    install(new JacksonModule()); // json (de)serialization
 
-    decorator(new AccessLogHandler());
-    decorator(new CorsHandler());
+    public App() {
+        install(new GracefulShutdown());
+        install(new GuiceModule()); // dependency injection
+        install(new HikariModule()); // database connections
+        install(new FlywayModule()); // schema migration
+        install(new JacksonModule()); // json (de)serialization
+        install(new GuiceModule(new AppModule()));
 
-    // here we define our controllers
 
-    mvc(LoginController.class);
-    mvc(LogoutController.class);
-    mvc(BookController.class);
-    mvc(RegisterUserController.class);
-    mvc(ClassificationController.class);
+        decorator(new AccessLogHandler());
+        decorator(new CorsHandler());
 
-    // pac4j is a security framework for authentication & authorization
-    // we need this for some of the controllers to make sure the
-    // user is logged in and has the correct permissions
 
-    Pac4jOptions pac4jOptions = new Pac4jOptions();
-    pac4jOptions.setCookieSameSite(SameSite.LAX);
-    pac4jOptions.setLogoutPath("/p4jlogout"); // can't get rid of it
+        // here we define our controllers
 
-    // Having three modules seems less than ideal, but I can't find another way with jooby
+        mvc(LoginController.class);
+        mvc(LogoutController.class);
+        mvc(BookController.class);
+        mvc(RegisterUserController.class);
+        mvc(ClassificationController.class);
 
-    Pac4jModule module1 = new Pac4jModule(pac4jOptions);
-    module1.client("/*", DbCookieClient.class);
-    install(module1);
+        // pac4j is a security framework for authentication & authorization
+        // we need this for some of the controllers to make sure the
+        // user is logged in and has the correct permissions
 
-    Pac4jModule module2 = new Pac4jModule(pac4jOptions);
-    module2.client("/user/*",
-        new RequireAllRolesAuthorizer<>(Role.USER.toString()),
-        DbCookieClient.class);
-    install(module2);
+        Pac4jOptions pac4jOptions = new Pac4jOptions();
+        pac4jOptions.setCookieSameSite(SameSite.LAX);
+        pac4jOptions.setLogoutPath("/p4jlogout"); // can't get rid of it
 
-    Pac4jModule module3 = new Pac4jModule(pac4jOptions);
-    module3.client("/admin/*", new RequireAllRolesAuthorizer<>(Role.ADMIN.toString()),
-        DbCookieClient.class);
-    install(module3);
+        // Having three modules seems less than ideal, but I can't find another way with jooby
 
-    mvc(UserController.class);
-    mvc(se.yrgo.libraryapp.controllers.admin.BookController.class);
-    mvc(LoanController.class);
-    mvc(se.yrgo.libraryapp.controllers.user.LoanController.class);
-  }
+        Pac4jModule module1 = new Pac4jModule(pac4jOptions);
+        module1.client("/*", DbCookieClient.class);
+        install(module1);
 
-  public static void main(final String[] args) {
-    runApp(args, App::new);
-  }
+        Pac4jModule module2 = new Pac4jModule(pac4jOptions);
+        module2.client("/user/*",
+                new RequireAllRolesAuthorizer<>(Role.USER.toString()),
+                DbCookieClient.class);
+        install(module2);
+
+        Pac4jModule module3 = new Pac4jModule(pac4jOptions);
+        module3.client("/admin/*", new RequireAllRolesAuthorizer<>(Role.ADMIN.toString()),
+                DbCookieClient.class);
+        install(module3);
+
+        mvc(UserController.class);
+        mvc(se.yrgo.libraryapp.controllers.admin.BookController.class);
+        mvc(LoanController.class);
+        mvc(se.yrgo.libraryapp.controllers.user.LoanController.class);
+    }
+
+    public static void main(final String[] args) {
+        runApp(args, App::new);
+    }
+
 }
